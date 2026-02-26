@@ -1,0 +1,26 @@
+{
+  "name": "manju",
+  "version": "0.1.0",
+  "description": "Multi-agent orchestration framework using Claude Code CLI",
+  "type": "module",
+  "bin": {
+    "manju": "./dist/bin/manju.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "start": "node dist/bin/manju.js"
+  },
+  "keywords": ["multi-agent", "orchestration", "claude", "ai"],
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.7.0",
+    "vitest": "^3.0.0"
+  }
+}

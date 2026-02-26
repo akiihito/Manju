@@ -1,0 +1,7 @@
+{
+  "output": "The Express app uses a standard MVC structure with routes/ for API endpoints, models/ for Mongoose schemas, and middleware/ for auth and error handling.",
+  "artifacts": [
+    { "path": "docs/architecture.md", "action": "created" }
+  ],
+  "context_contribution": "Express 4.x with Mongoose ODM. Routes are in routes/, models in models/. Auth uses JWT middleware."
+}
