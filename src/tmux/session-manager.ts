@@ -1,7 +1,7 @@
 import { execSync, spawn } from "node:child_process";
 import { TmuxError } from "../utils/errors.js";
 import { Logger } from "../utils/logger.js";
-import { calculateLayout, getTotalPanes } from "./layout.js";
+import { generateLayoutCommands, getTotalPanes } from "./layout.js";
 import type { TeamConfig } from "../types.js";
 
 const SESSION_NAME = "manju";
@@ -47,7 +47,6 @@ export class TmuxSessionManager {
       );
     }
 
-    const layout = calculateLayout(team);
     const totalPanes = getTotalPanes(team);
 
     this.logger.info(`Creating session "${this.sessionName}" with ${totalPanes} panes`);
@@ -60,46 +59,11 @@ export class TmuxSessionManager {
     // Rename first pane's window
     this.exec(`tmux rename-window -t ${this.sessionName} "manju"`);
 
-    // Create the layout: split into rows, then split rows into columns
-    // Row 0 already exists (first pane). We need to create row 1 and row 2 by horizontal splits.
-
-    const rows = layout.rows;
-
-    // Create additional rows by splitting horizontally
-    for (let r = 1; r < rows.length; r++) {
-      this.exec(
-        `tmux split-window -t ${this.sessionName} -v -c "${cwd}"`,
-      );
+    // Apply the layout using explicit percentage-based splits
+    const layoutCmds = generateLayoutCommands(this.sessionName, team, cwd);
+    for (const cmd of layoutCmds) {
+      this.exec(cmd);
     }
-
-    // Now we have N horizontal panes (one per row). We need to split each row vertically.
-    // After horizontal splits, pane indices are 0, 1, 2, ...
-    // We'll go row by row and split for additional columns.
-
-    // Even out the row heights
-    this.exec(`tmux select-layout -t ${this.sessionName} tiled`);
-
-    // Get current pane count before vertical splits
-    // At this point we have rows.length panes (one per row)
-    let currentPaneIdx = 0;
-
-    for (let r = 0; r < rows.length; r++) {
-      const rowPanes = rows[r];
-      // First pane in row already exists
-      // Split for additional panes in this row
-      for (let c = 1; c < rowPanes.length; c++) {
-        this.exec(
-          `tmux split-window -t ${this.sessionName}:0.${currentPaneIdx} -h -c "${cwd}"`,
-        );
-      }
-      currentPaneIdx += rowPanes.length;
-    }
-
-    // Apply tiled layout for even distribution, then we'll rely on tmux's even split
-    this.exec(`tmux select-layout -t ${this.sessionName} tiled`);
-
-    // Select the first pane (coordinator)
-    this.exec(`tmux select-pane -t ${this.sessionName}:0.0`);
 
     this.logger.info("Session created successfully");
   }
