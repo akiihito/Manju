@@ -39,7 +39,18 @@ export class TaskPlanner {
       throw new TaskError(`Task planning failed with exit code ${result.exitCode}`);
     }
 
-    return this.claudeRunner.parseJsonOutput<TaskPlan>(result.output);
+    const plan = this.claudeRunner.parseJsonOutput<TaskPlan>(result.output);
+
+    // Ensure tasks is always a valid array
+    if (!Array.isArray(plan.tasks)) {
+      this.logger.warn(`Plan tasks is not an array (got ${typeof plan.tasks}), defaulting to empty`);
+      plan.tasks = [];
+    }
+    if (!plan.summary) {
+      plan.summary = "";
+    }
+
+    return plan;
   }
 
   /** Convert planned tasks into assigned Task objects */

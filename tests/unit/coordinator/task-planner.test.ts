@@ -1,6 +1,7 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import { TaskPlanner } from "../../../src/coordinator/task-planner.js";
 import type { TaskPlan, TeamConfig } from "../../../src/types.js";
+import { ClaudeRunner } from "../../../src/worker/claude-runner.js";
 
 describe("TaskPlanner", () => {
   const planner = new TaskPlanner();
@@ -84,6 +85,61 @@ describe("TaskPlanner", () => {
       for (const dep of implTask.dependencies) {
         expect(invIds).toContain(dep);
       }
+    });
+  });
+
+  describe("planTasks validation", () => {
+    it("should normalize plan with missing tasks to empty array", async () => {
+      const planner = new TaskPlanner();
+
+      // Mock the runner to return a result without tasks
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const runner: ClaudeRunner = (planner as any).claudeRunner;
+      vi.spyOn(runner, "run").mockResolvedValue({
+        output: JSON.stringify({ result: JSON.stringify({ summary: "No tasks" }) }),
+        exitCode: 0,
+        durationMs: 100,
+      });
+
+      const plan = await planner.planTasks("do something");
+      expect(plan.tasks).toEqual([]);
+      expect(plan.summary).toBe("No tasks");
+    });
+
+    it("should normalize plan with non-array tasks to empty array", async () => {
+      const planner = new TaskPlanner();
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const runner: ClaudeRunner = (planner as any).claudeRunner;
+      vi.spyOn(runner, "run").mockResolvedValue({
+        output: JSON.stringify({ result: JSON.stringify({ summary: "Bad", tasks: "not an array" }) }),
+        exitCode: 0,
+        durationMs: 100,
+      });
+
+      const plan = await planner.planTasks("do something");
+      expect(plan.tasks).toEqual([]);
+    });
+
+    it("should keep valid tasks array as-is", async () => {
+      const planner = new TaskPlanner();
+
+      const validPlan = {
+        summary: "Good plan",
+        tasks: [{ title: "T1", description: "D1", role: "investigator", dependencies: [] }],
+      };
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const runner: ClaudeRunner = (planner as any).claudeRunner;
+      vi.spyOn(runner, "run").mockResolvedValue({
+        output: JSON.stringify({ result: JSON.stringify(validPlan) }),
+        exitCode: 0,
+        durationMs: 100,
+      });
+
+      const plan = await planner.planTasks("do something");
+      expect(plan.tasks).toHaveLength(1);
+      expect(plan.tasks[0].title).toBe("T1");
     });
   });
 });

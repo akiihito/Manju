@@ -7,3 +7,4 @@
 - バグ修正: handleRequest で plan.tasks が undefined → TypeError: Cannot read properties of undefined (reading 'length'). parseJsonOutput の出力パース改善
 - 機能追加: Coordinator 内で quit/exit したら tmux セッション全体を終了する
 - 機能追加: コーディネーターコマンドとタスクリクエストの分離 (`/` プレフィックスでコマンド・ディレクティブを区別、`/help`, `/directives` 追加、`buildPlanningPrompt` にディレクティブ注入)
+- バグ修正: planTasks のパース結果で tasks が undefined/非配列のときに TypeError が発生する問題を修正 (バリデーション追加)
