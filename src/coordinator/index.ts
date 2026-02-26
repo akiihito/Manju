@@ -4,6 +4,7 @@ import { Watcher } from "../workspace/watcher.js";
 import { TaskPlanner } from "./task-planner.js";
 import { TaskScheduler } from "./task-scheduler.js";
 import { ContextManager } from "./context-manager.js";
+import { ComplianceChecker } from "./compliance-checker.js";
 import { Logger } from "../utils/logger.js";
 import type { Task, TeamConfig } from "../types.js";
 
@@ -22,6 +23,7 @@ export class Coordinator {
   private planner: TaskPlanner;
   private scheduler: TaskScheduler;
   private contextManager: ContextManager;
+  private complianceChecker: ComplianceChecker;
   private logger: Logger;
   private team: TeamConfig;
   private cwd: string;
@@ -38,6 +40,7 @@ export class Coordinator {
     this.planner = new TaskPlanner();
     this.scheduler = new TaskScheduler(this.store);
     this.contextManager = new ContextManager(this.store);
+    this.complianceChecker = new ComplianceChecker();
     this.logger = new Logger("coordinator");
   }
 
@@ -181,6 +184,18 @@ export class Coordinator {
 
       // Add context contribution
       await this.contextManager.addFromResult(result, task.assignee);
+
+      // Compliance check
+      if (result.status === "success" && this.directives.length > 0) {
+        const compliance = await this.complianceChecker.check(result, task, this.directives);
+        if (compliance && !compliance.compliant) {
+          this.logger.warn(`Task ${taskId} compliance violations: ${compliance.summary}`);
+          console.log(`\n⚠️  Compliance: "${task.title}": ${compliance.summary}`);
+          for (const v of compliance.violations) {
+            console.log(`   - "${v.directive}" — ${v.reason}`);
+          }
+        }
+      }
 
       this.logger.info(
         `Task ${taskId} completed (${result.status}): ${task.title}`,

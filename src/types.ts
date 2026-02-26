@@ -106,3 +106,16 @@ export interface Layout {
   panes: PaneInfo[];
   rows: PaneInfo[][];
 }
+
+/** Result of a directive compliance check */
+export interface ComplianceResult {
+  compliant: boolean;
+  violations: ComplianceViolation[];
+  summary: string;
+}
+
+/** A single directive violation */
+export interface ComplianceViolation {
+  directive: string;
+  reason: string;
+}

@@ -67,3 +67,37 @@ export const TASK_RESULT_SCHEMA = {
   },
   required: ["output", "artifacts", "context_contribution"],
 };
+
+/** JSON Schema for compliance check result */
+export const COMPLIANCE_CHECK_SCHEMA = {
+  type: "object" as const,
+  properties: {
+    compliant: {
+      type: "boolean" as const,
+      description: "Whether the task output complies with all directives",
+    },
+    violations: {
+      type: "array" as const,
+      items: {
+        type: "object" as const,
+        properties: {
+          directive: {
+            type: "string" as const,
+            description: "The directive that was violated",
+          },
+          reason: {
+            type: "string" as const,
+            description: "Why the output violates this directive",
+          },
+        },
+        required: ["directive", "reason"],
+      },
+      description: "List of directive violations found",
+    },
+    summary: {
+      type: "string" as const,
+      description: "Brief summary of the compliance check result",
+    },
+  },
+  required: ["compliant", "violations", "summary"],
+};

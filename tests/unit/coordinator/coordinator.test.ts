@@ -274,6 +274,195 @@ describe("Coordinator command routing", () => {
     exitMock.mockRestore();
   });
 
+  it("handleResult should call complianceChecker.check on success with directives", async () => {
+    const { Coordinator } = await import("../../../src/coordinator/index.js");
+    const exitMock = vi.spyOn(process, "exit").mockImplementation((() => {}) as never);
+
+    const coord = new Coordinator("/tmp/test", {
+      investigators: 1,
+      implementers: 1,
+      testers: 1,
+    });
+
+    // Set up a current task
+    const task = {
+      id: "task-123",
+      title: "Test task",
+      description: "A test task",
+      role: "implementer" as const,
+      assignee: "implementer-1",
+      status: "running" as const,
+      dependencies: [],
+      context: "",
+      created_at: new Date().toISOString(),
+    };
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (coord as any).currentTasks = [task];
+
+    // Add directives
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (coord as any).directives = ["日本語で応答して"];
+
+    // Mock store.readResult
+    const mockResult = {
+      task_id: "task-123",
+      status: "success",
+      output: "Done",
+      artifacts: [],
+      context_contribution: "context",
+      cost_usd: 0.01,
+      duration_ms: 1000,
+    };
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (coord as any).store.readResult = vi.fn().mockResolvedValue(mockResult);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (coord as any).store.writeTask = vi.fn().mockResolvedValue(undefined);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (coord as any).contextManager.addFromResult = vi.fn().mockResolvedValue(undefined);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (coord as any).scheduler.resolveDependencies = vi.fn().mockResolvedValue([]);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (coord as any).scheduler.isAllComplete = vi.fn().mockReturnValue(false);
+
+    // Mock complianceChecker.check
+    const checkSpy = vi.fn().mockResolvedValue(null);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (coord as any).complianceChecker.check = checkSpy;
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (coord as any).handleResult("task-123.json");
+
+    expect(checkSpy).toHaveBeenCalledWith(mockResult, task, ["日本語で応答して"]);
+
+    exitMock.mockRestore();
+  });
+
+  it("handleResult should not call complianceChecker.check when no directives", async () => {
+    const { Coordinator } = await import("../../../src/coordinator/index.js");
+    const exitMock = vi.spyOn(process, "exit").mockImplementation((() => {}) as never);
+
+    const coord = new Coordinator("/tmp/test", {
+      investigators: 1,
+      implementers: 1,
+      testers: 1,
+    });
+
+    const task = {
+      id: "task-456",
+      title: "Test task",
+      description: "A test task",
+      role: "implementer" as const,
+      assignee: "implementer-1",
+      status: "running" as const,
+      dependencies: [],
+      context: "",
+      created_at: new Date().toISOString(),
+    };
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (coord as any).currentTasks = [task];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (coord as any).directives = [];
+
+    const mockResult = {
+      task_id: "task-456",
+      status: "success",
+      output: "Done",
+      artifacts: [],
+      context_contribution: "context",
+      cost_usd: 0.01,
+      duration_ms: 1000,
+    };
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (coord as any).store.readResult = vi.fn().mockResolvedValue(mockResult);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (coord as any).store.writeTask = vi.fn().mockResolvedValue(undefined);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (coord as any).contextManager.addFromResult = vi.fn().mockResolvedValue(undefined);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (coord as any).scheduler.resolveDependencies = vi.fn().mockResolvedValue([]);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (coord as any).scheduler.isAllComplete = vi.fn().mockReturnValue(false);
+
+    const checkSpy = vi.fn().mockResolvedValue(null);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (coord as any).complianceChecker.check = checkSpy;
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (coord as any).handleResult("task-456.json");
+
+    expect(checkSpy).not.toHaveBeenCalled();
+
+    exitMock.mockRestore();
+  });
+
+  it("handleResult should log violations when non-compliant", async () => {
+    const { Coordinator } = await import("../../../src/coordinator/index.js");
+    const exitMock = vi.spyOn(process, "exit").mockImplementation((() => {}) as never);
+
+    const coord = new Coordinator("/tmp/test", {
+      investigators: 1,
+      implementers: 1,
+      testers: 1,
+    });
+
+    const task = {
+      id: "task-789",
+      title: "Test task",
+      description: "A test task",
+      role: "implementer" as const,
+      assignee: "implementer-1",
+      status: "running" as const,
+      dependencies: [],
+      context: "",
+      created_at: new Date().toISOString(),
+    };
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (coord as any).currentTasks = [task];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (coord as any).directives = ["日本語で応答して"];
+
+    const mockResult = {
+      task_id: "task-789",
+      status: "success",
+      output: "Done",
+      artifacts: [],
+      context_contribution: "context",
+      cost_usd: 0.01,
+      duration_ms: 1000,
+    };
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (coord as any).store.readResult = vi.fn().mockResolvedValue(mockResult);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (coord as any).store.writeTask = vi.fn().mockResolvedValue(undefined);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (coord as any).contextManager.addFromResult = vi.fn().mockResolvedValue(undefined);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (coord as any).scheduler.resolveDependencies = vi.fn().mockResolvedValue([]);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (coord as any).scheduler.isAllComplete = vi.fn().mockReturnValue(false);
+
+    const checkSpy = vi.fn().mockResolvedValue({
+      compliant: false,
+      violations: [{ directive: "日本語で応答して", reason: "Output is in English" }],
+      summary: "Language mismatch",
+    });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (coord as any).complianceChecker.check = checkSpy;
+
+    const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (coord as any).handleResult("task-789.json");
+
+    const output = consoleSpy.mock.calls.map((c) => c.join(" ")).join("\n");
+    expect(output).toContain("Compliance");
+    expect(output).toContain("Language mismatch");
+    expect(output).toContain("日本語で応答して");
+
+    consoleSpy.mockRestore();
+    exitMock.mockRestore();
+  });
+
   it("directives should be passed to handleRequest context", async () => {
     const { Coordinator } = await import("../../../src/coordinator/index.js");
     const exitMock = vi.spyOn(process, "exit").mockImplementation((() => {}) as never);

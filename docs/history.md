@@ -9,3 +9,4 @@
 - 機能追加: コーディネーターコマンドとタスクリクエストの分離 (`/` プレフィックスでコマンド・ディレクティブを区別、`/help`, `/directives` 追加、`buildPlanningPrompt` にディレクティブ注入)
 - バグ修正: planTasks のパース結果で tasks が undefined/非配列のときに TypeError が発生する問題を修正 (バリデーション追加)
 - 機能追加: ディレクティブのワーカーへの伝播 (`.manju/directives.json` 経由で Coordinator のディレクティブをワーカーに伝搬。FileStore に writeDirectives/readDirectives 追加、buildTaskPrompt にディレクティブ引数追加、daemon の executeTask でディレクティブ読み込み)
+- 機能追加: ディレクティブ準拠チェック (Coordinator の handleResult でワーカー出力のディレクティブ準拠を Claude で判定。ComplianceChecker クラス新規作成、ComplianceResult/ComplianceViolation 型追加、COMPLIANCE_CHECK_SCHEMA 追加。非準拠時は警告ログ出力、将来 reviewer ロールに切り出し可能な設計)
