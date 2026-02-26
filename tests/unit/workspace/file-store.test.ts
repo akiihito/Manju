@@ -129,6 +129,27 @@ describe("FileStore", () => {
     });
   });
 
+  describe("directives", () => {
+    it("should write and read directives", async () => {
+      const directives = ["日本語で応答して", "テストは不要"];
+      await store.writeDirectives(directives);
+      const read = await store.readDirectives();
+      expect(read).toEqual(directives);
+    });
+
+    it("should return empty array when no directives file exists", async () => {
+      const read = await store.readDirectives();
+      expect(read).toEqual([]);
+    });
+
+    it("should overwrite previous directives", async () => {
+      await store.writeDirectives(["first"]);
+      await store.writeDirectives(["second", "third"]);
+      const read = await store.readDirectives();
+      expect(read).toEqual(["second", "third"]);
+    });
+  });
+
   describe("clean", () => {
     it("should remove workspace directory", async () => {
       expect(fs.existsSync(store.basePath)).toBe(true);

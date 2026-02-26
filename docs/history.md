@@ -8,3 +8,4 @@
 - 機能追加: Coordinator 内で quit/exit したら tmux セッション全体を終了する
 - 機能追加: コーディネーターコマンドとタスクリクエストの分離 (`/` プレフィックスでコマンド・ディレクティブを区別、`/help`, `/directives` 追加、`buildPlanningPrompt` にディレクティブ注入)
 - バグ修正: planTasks のパース結果で tasks が undefined/非配列のときに TypeError が発生する問題を修正 (バリデーション追加)
+- 機能追加: ディレクティブのワーカーへの伝播 (`.manju/directives.json` 経由で Coordinator のディレクティブをワーカーに伝搬。FileStore に writeDirectives/readDirectives 追加、buildTaskPrompt にディレクティブ引数追加、daemon の executeTask でディレクティブ読み込み)

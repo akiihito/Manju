@@ -156,7 +156,7 @@ describe("Coordinator command routing", () => {
     exitMock.mockRestore();
   });
 
-  it("/ + free text should add a directive", async () => {
+  it("/ + free text should add a directive and write to store", async () => {
     const { Coordinator } = await import("../../../src/coordinator/index.js");
     const exitMock = vi.spyOn(process, "exit").mockImplementation((() => {}) as never);
 
@@ -166,11 +166,17 @@ describe("Coordinator command routing", () => {
       testers: 1,
     });
 
+    // Mock store.writeDirectives to avoid filesystem errors
+    const writeDirectivesSpy = vi.fn().mockResolvedValue(undefined);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (coord as any).store.writeDirectives = writeDirectivesSpy;
+
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await (coord as any).routeInput("/ここからは日本語で");
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     expect((coord as any).directives).toContain("ここからは日本語で");
+    expect(writeDirectivesSpy).toHaveBeenCalledWith(["ここからは日本語で"]);
 
     exitMock.mockRestore();
   });

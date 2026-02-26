@@ -36,7 +36,7 @@ export class PromptBuilder {
   }
 
   /** Build the task execution prompt including context */
-  buildTaskPrompt(task: Task, sharedContext?: SharedContext): string {
+  buildTaskPrompt(task: Task, sharedContext?: SharedContext, directives?: string[]): string {
     let prompt = `# Task: ${task.title}\n\n`;
     prompt += `${task.description}\n`;
 
@@ -48,6 +48,13 @@ export class PromptBuilder {
       prompt += `\n## Shared Context from Other Agents\n`;
       for (const entry of sharedContext.entries) {
         prompt += `\n### From ${entry.from} (${entry.task_id})\n${entry.summary}\n`;
+      }
+    }
+
+    if (directives && directives.length > 0) {
+      prompt += `\n## Coordinator Directives\n`;
+      for (const d of directives) {
+        prompt += `- ${d}\n`;
       }
     }
 

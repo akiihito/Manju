@@ -146,6 +146,22 @@ export class FileStore {
     await this.writeJsonAtomic(filePath, ctx);
   }
 
+  // --- Directives ---
+
+  async writeDirectives(directives: string[]): Promise<void> {
+    const filePath = path.join(this.root, "directives.json");
+    await this.writeJsonAtomic(filePath, { directives });
+  }
+
+  async readDirectives(): Promise<string[]> {
+    const filePath = path.join(this.root, "directives.json");
+    if (!fs.existsSync(filePath)) {
+      return [];
+    }
+    const data = await this.readJson<{ directives: string[] }>(filePath);
+    return data.directives;
+  }
+
   // --- Session ---
 
   async writeSession(session: Session): Promise<void> {

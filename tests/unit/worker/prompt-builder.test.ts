@@ -68,6 +68,38 @@ describe("PromptBuilder", () => {
       const prompt = builder.buildTaskPrompt(sampleTask, { entries: [] });
       expect(prompt).not.toContain("Shared Context");
     });
+
+    it("should include directives section when directives are provided", () => {
+      const prompt = builder.buildTaskPrompt(sampleTask, undefined, [
+        "日本語で応答して",
+        "テストは不要",
+      ]);
+      expect(prompt).toContain("## Coordinator Directives");
+      expect(prompt).toContain("- 日本語で応答して");
+      expect(prompt).toContain("- テストは不要");
+    });
+
+    it("should not include directives section when directives array is empty", () => {
+      const prompt = builder.buildTaskPrompt(sampleTask, undefined, []);
+      expect(prompt).not.toContain("Coordinator Directives");
+    });
+
+    it("should not include directives section when directives is undefined", () => {
+      const prompt = builder.buildTaskPrompt(sampleTask);
+      expect(prompt).not.toContain("Coordinator Directives");
+    });
+
+    it("should include both shared context and directives", () => {
+      const sharedCtx: SharedContext = {
+        entries: [
+          { from: "investigator-1", task_id: "task-000", summary: "Express app" },
+        ],
+      };
+      const prompt = builder.buildTaskPrompt(sampleTask, sharedCtx, ["日本語で応答して"]);
+      expect(prompt).toContain("Shared Context");
+      expect(prompt).toContain("## Coordinator Directives");
+      expect(prompt).toContain("- 日本語で応答して");
+    });
   });
 
   describe("buildPlanningPrompt", () => {

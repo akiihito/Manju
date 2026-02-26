@@ -118,6 +118,7 @@ export class Coordinator {
 
       // Free-form directive
       this.directives.push(body);
+      await this.store.writeDirectives(this.directives);
       console.log(`Directive added: ${body}`);
       this.logger.info(`Directive added: ${body}`);
       return;
