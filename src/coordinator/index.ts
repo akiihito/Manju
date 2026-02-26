@@ -17,10 +17,12 @@ export class Coordinator {
   private team: TeamConfig;
   private cwd: string;
   private currentTasks: Task[] = [];
+  private onShutdown?: () => void;
 
-  constructor(cwd: string, team: TeamConfig) {
+  constructor(cwd: string, team: TeamConfig, onShutdown?: () => void) {
     this.cwd = cwd;
     this.team = team;
+    this.onShutdown = onShutdown;
     this.store = new FileStore(cwd);
     this.watcher = new Watcher("coordinator-watcher");
     this.planner = new TaskPlanner();
@@ -64,9 +66,9 @@ export class Coordinator {
       }
 
       if (input === "quit" || input === "exit") {
-        this.watcher.stop();
         rl.close();
-        process.exit(0);
+        this.shutdown();
+        return;
       }
 
       try {
@@ -171,5 +173,15 @@ export class Coordinator {
     console.log(
       `\nTotal: ${JSON.stringify(summary)}\n`,
     );
+  }
+
+  /** Shut down the coordinator and the entire tmux session */
+  shutdown(): void {
+    this.logger.info("Shutting down...");
+    this.watcher.stop();
+    if (this.onShutdown) {
+      this.onShutdown();
+    }
+    process.exit(0);
   }
 }

@@ -127,7 +127,10 @@ async function main(): Promise<void> {
 
     case "coordinator": {
       const team = getTeamConfig(args);
-      const coordinator = new Coordinator(cwd, team);
+      const tmux = new TmuxSessionManager();
+      const coordinator = new Coordinator(cwd, team, () => {
+        tmux.killSession();
+      });
       await coordinator.start();
       break;
     }
