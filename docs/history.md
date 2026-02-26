@@ -4,3 +4,4 @@
 
 - CLAUDE.md 作成: 開発フロー (仕様→テスト→実装→テスト実行→commit & push)、許可不要で自律進行、指示命令を履歴ファイルに残す
 - バグ修正: tmux レイアウトが仕様通りに分割されず均等6分割になる問題を修正
+- バグ修正: handleRequest で plan.tasks が undefined → TypeError: Cannot read properties of undefined (reading 'length'). parseJsonOutput の出力パース改善

@@ -98,24 +98,69 @@ export class ClaudeRunner {
 
   /** Parse JSON output from claude --output-format json */
   parseJsonOutput<T>(output: string): T {
+    // Try parsing as a single JSON object first
+    let parsed: Record<string, unknown> | undefined;
     try {
-      // claude --output-format json wraps result in a JSON object
-      const parsed = JSON.parse(output);
-      // The result field contains the actual output
-      if (parsed.result !== undefined) {
-        // If result is a string that looks like JSON, try parsing it
-        if (typeof parsed.result === "string") {
-          try {
-            return JSON.parse(parsed.result) as T;
-          } catch {
-            return parsed.result as T;
-          }
-        }
-        return parsed.result as T;
+      parsed = JSON.parse(output);
+    } catch {
+      // Might be NDJSON (multiple JSON lines) — find the result line
+      parsed = this.findResultFromNdjson(output);
+      if (!parsed) {
+        throw new ClaudeRunnerError(
+          `Failed to parse claude output: not valid JSON or NDJSON`,
+        );
       }
-      return parsed as T;
-    } catch (err) {
-      throw new ClaudeRunnerError(`Failed to parse claude output: ${err}`);
     }
+
+    // Extract result field if present
+    if (parsed.result !== undefined) {
+      if (typeof parsed.result === "string") {
+        return this.parseResultString<T>(parsed.result);
+      }
+      return parsed.result as T;
+    }
+    return parsed as T;
+  }
+
+  /** Try to parse a result string as JSON, handling markdown code fences */
+  private parseResultString<T>(result: string): T {
+    // Try direct JSON parse
+    try {
+      return JSON.parse(result) as T;
+    } catch {
+      // ignore
+    }
+
+    // Try extracting JSON from markdown code fences (```json ... ``` or ``` ... ```)
+    const codeFenceMatch = result.match(/```(?:json)?\s*\n?([\s\S]*?)\n?```/);
+    if (codeFenceMatch) {
+      try {
+        return JSON.parse(codeFenceMatch[1]) as T;
+      } catch {
+        // ignore
+      }
+    }
+
+    throw new ClaudeRunnerError(
+      `Failed to extract valid JSON from result: ${result.slice(0, 200)}`,
+    );
+  }
+
+  /** Find the result object from NDJSON output */
+  private findResultFromNdjson(
+    output: string,
+  ): Record<string, unknown> | undefined {
+    const lines = output.split("\n").filter((l) => l.trim());
+    for (const line of lines) {
+      try {
+        const obj = JSON.parse(line);
+        if (obj.type === "result" || obj.result !== undefined) {
+          return obj;
+        }
+      } catch {
+        // skip non-JSON lines
+      }
+    }
+    return undefined;
   }
 }
