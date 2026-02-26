@@ -99,17 +99,18 @@ export class ClaudeRunner {
   /** Parse JSON output from claude --output-format json */
   parseJsonOutput<T>(output: string): T {
     // Try parsing as a single JSON object first
-    let parsed: Record<string, unknown> | undefined;
+    let parsed: Record<string, unknown>;
     try {
       parsed = JSON.parse(output);
     } catch {
       // Might be NDJSON (multiple JSON lines) — find the result line
-      parsed = this.findResultFromNdjson(output);
-      if (!parsed) {
+      const fromNdjson = this.findResultFromNdjson(output);
+      if (!fromNdjson) {
         throw new ClaudeRunnerError(
           `Failed to parse claude output: not valid JSON or NDJSON`,
         );
       }
+      parsed = fromNdjson;
     }
 
     // Extract result field if present
