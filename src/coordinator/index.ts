@@ -7,6 +7,15 @@ import { ContextManager } from "./context-manager.js";
 import { Logger } from "../utils/logger.js";
 import type { Task, TeamConfig } from "../types.js";
 
+/** Fixed commands that the coordinator handles directly */
+const FIXED_COMMANDS: Record<string, string> = {
+  status: "Show current task status",
+  quit: "Shut down the session",
+  exit: "Shut down the session",
+  help: "Show available commands",
+  directives: "List current directives",
+};
+
 export class Coordinator {
   private store: FileStore;
   private watcher: Watcher;
@@ -17,6 +26,7 @@ export class Coordinator {
   private team: TeamConfig;
   private cwd: string;
   private currentTasks: Task[] = [];
+  private directives: string[] = [];
   private onShutdown?: () => void;
 
   constructor(cwd: string, team: TeamConfig, onShutdown?: () => void) {
@@ -59,22 +69,14 @@ export class Coordinator {
         return;
       }
 
-      if (input === "status") {
-        this.printStatus();
-        rl.prompt();
-        return;
-      }
-
-      if (input === "quit" || input === "exit") {
-        rl.close();
-        this.shutdown();
-        return;
-      }
-
       try {
-        await this.handleRequest(input);
+        const result = await this.routeInput(input);
+        if (result === "shutdown") {
+          rl.close();
+          return;
+        }
       } catch (err) {
-        this.logger.error(`Failed to handle request: ${err}`);
+        this.logger.error(`Failed to handle input: ${err}`);
       }
 
       rl.prompt();
@@ -85,13 +87,68 @@ export class Coordinator {
     });
   }
 
+  /**
+   * Route user input to the appropriate handler.
+   * - "/" prefix → coordinator command or directive
+   * - "status" / "quit" / "exit" (no prefix) → legacy backward compat
+   * - everything else → task decomposition
+   */
+  private async routeInput(input: string): Promise<"shutdown" | void> {
+    // Slash-prefixed commands
+    if (input.startsWith("/")) {
+      const body = input.slice(1);
+      const cmd = body.toLowerCase();
+
+      if (cmd === "status") {
+        this.printStatus();
+        return;
+      }
+      if (cmd === "quit" || cmd === "exit") {
+        this.shutdown();
+        return "shutdown";
+      }
+      if (cmd === "help") {
+        this.printHelp();
+        return;
+      }
+      if (cmd === "directives") {
+        this.printDirectives();
+        return;
+      }
+
+      // Free-form directive
+      this.directives.push(body);
+      console.log(`Directive added: ${body}`);
+      this.logger.info(`Directive added: ${body}`);
+      return;
+    }
+
+    // Legacy commands (backward compat, no slash)
+    if (input === "status") {
+      this.printStatus();
+      return;
+    }
+    if (input === "quit" || input === "exit") {
+      this.shutdown();
+      return "shutdown";
+    }
+
+    // Task request
+    await this.handleRequest(input);
+  }
+
   /** Handle a user request: plan and dispatch tasks */
   private async handleRequest(request: string): Promise<void> {
     this.logger.info(`Processing request: ${request}`);
     console.log("\nPlanning tasks...\n");
 
     const contextSummary = await this.contextManager.buildContextSummary();
-    const plan = await this.planner.planTasks(request, contextSummary || undefined, this.cwd);
+    const plan = await this.planner.planTasks(
+      request,
+      contextSummary || undefined,
+      this.cwd,
+      this.directives.length > 0 ? this.directives : undefined,
+    );
 
     console.log(`\nPlan: ${plan.summary}`);
     console.log(`Tasks: ${plan.tasks.length}\n`);
@@ -173,6 +230,32 @@ export class Coordinator {
     console.log(
       `\nTotal: ${JSON.stringify(summary)}\n`,
     );
+  }
+
+  /** Print available commands */
+  private printHelp(): void {
+    console.log("\n--- Manju Commands ---");
+    console.log("  /status      Show current task status");
+    console.log("  /quit        Shut down the session");
+    console.log("  /exit        Shut down the session");
+    console.log("  /help        Show this help");
+    console.log("  /directives  List current directives");
+    console.log("  /<text>      Add a coordinator directive");
+    console.log("");
+    console.log("Any other input is treated as a task request.\n");
+  }
+
+  /** Print current directives */
+  private printDirectives(): void {
+    if (this.directives.length === 0) {
+      console.log("No directives set.");
+      return;
+    }
+    console.log("\n--- Coordinator Directives ---");
+    for (const d of this.directives) {
+      console.log(`  - ${d}`);
+    }
+    console.log("");
   }
 
   /** Shut down the coordinator and the entire tmux session */

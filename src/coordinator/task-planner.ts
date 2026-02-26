@@ -22,8 +22,9 @@ export class TaskPlanner {
     userRequest: string,
     contextSummary?: string,
     cwd?: string,
+    directives?: string[],
   ): Promise<TaskPlan> {
-    const prompt = this.promptBuilder.buildPlanningPrompt(userRequest, contextSummary);
+    const prompt = this.promptBuilder.buildPlanningPrompt(userRequest, contextSummary, directives);
 
     const result = await this.claudeRunner.run({
       prompt,

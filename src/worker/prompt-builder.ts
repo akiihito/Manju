@@ -55,7 +55,7 @@ export class PromptBuilder {
   }
 
   /** Build the coordinator's task planning prompt */
-  buildPlanningPrompt(userRequest: string, contextSummary?: string): string {
+  buildPlanningPrompt(userRequest: string, contextSummary?: string, directives?: string[]): string {
     let prompt = `# User Request\n\n${userRequest}\n\n`;
     prompt += `Break this request into concrete tasks for a development team.\n`;
     prompt += `Available roles:\n`;
@@ -67,6 +67,13 @@ export class PromptBuilder {
 
     if (contextSummary) {
       prompt += `\n## Current Project Context\n${contextSummary}\n`;
+    }
+
+    if (directives && directives.length > 0) {
+      prompt += `\n## Coordinator Directives\n`;
+      for (const d of directives) {
+        prompt += `- ${d}\n`;
+      }
     }
 
     return prompt;

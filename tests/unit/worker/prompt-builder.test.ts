@@ -87,5 +87,36 @@ describe("PromptBuilder", () => {
       const prompt = builder.buildPlanningPrompt("Add login feature", "Express app with JWT");
       expect(prompt).toContain("Express app with JWT");
     });
+
+    it("should include directives section when directives are provided", () => {
+      const prompt = builder.buildPlanningPrompt("Add login feature", undefined, [
+        "日本語で応答して",
+        "テストは不要",
+      ]);
+      expect(prompt).toContain("## Coordinator Directives");
+      expect(prompt).toContain("日本語で応答して");
+      expect(prompt).toContain("テストは不要");
+    });
+
+    it("should not include directives section when directives array is empty", () => {
+      const prompt = builder.buildPlanningPrompt("Add login feature", undefined, []);
+      expect(prompt).not.toContain("Coordinator Directives");
+    });
+
+    it("should not include directives section when directives is undefined", () => {
+      const prompt = builder.buildPlanningPrompt("Add login feature");
+      expect(prompt).not.toContain("Coordinator Directives");
+    });
+
+    it("should include both context and directives when both provided", () => {
+      const prompt = builder.buildPlanningPrompt(
+        "Add login feature",
+        "Express app with JWT",
+        ["日本語で応答して"],
+      );
+      expect(prompt).toContain("Express app with JWT");
+      expect(prompt).toContain("## Coordinator Directives");
+      expect(prompt).toContain("日本語で応答して");
+    });
   });
 });

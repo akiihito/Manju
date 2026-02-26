@@ -6,3 +6,4 @@
 - バグ修正: tmux レイアウトが仕様通りに分割されず均等6分割になる問題を修正
 - バグ修正: handleRequest で plan.tasks が undefined → TypeError: Cannot read properties of undefined (reading 'length'). parseJsonOutput の出力パース改善
 - 機能追加: Coordinator 内で quit/exit したら tmux セッション全体を終了する
+- 機能追加: コーディネーターコマンドとタスクリクエストの分離 (`/` プレフィックスでコマンド・ディレクティブを区別、`/help`, `/directives` 追加、`buildPlanningPrompt` にディレクティブ注入)
