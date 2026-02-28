@@ -10,17 +10,42 @@
 
 ## インストール
 
+### グローバルインストール（推奨）
+
 ```bash
+git clone https://github.com/akiihito/Manju.git
+cd Manju
 npm install
 npm run build
+npm install -g .
+```
+
+インストール後は任意のプロジェクトで `manju` コマンドが使える。
+
+### 開発中に使う（npm link）
+
+```bash
+cd /path/to/Manju
+npm install
+npm run build
+npm link
 ```
 
 ## 使い方
 
 ### セッション開始
 
+対象プロジェクトのディレクトリで実行する。
+
 ```bash
-npx manju start
+cd ~/your-project
+manju start
+```
+
+別ディレクトリを指定する場合は `--cwd` を使う。
+
+```bash
+manju start --cwd ~/your-project
 ```
 
 tmux セッションが起動し、6つのペインが表示される:
@@ -42,9 +67,9 @@ Coordinator ペインにリクエストを入力すると、自動的にタス�
 ### コマンド
 
 ```bash
-npx manju start              # セッション開始
-npx manju stop               # セッション停止
-npx manju status             # 状態確認
+manju start              # セッション開始
+manju stop               # セッション停止
+manju status             # 状態確認
 ```
 
 ### Coordinator 内コマンド
@@ -73,7 +98,7 @@ Directive added: テストは必ず vitest で書くこと
 ## チーム構成のカスタマイズ
 
 ```bash
-npx manju start --investigators 3 --implementers 4 --testers 2
+manju start --investigators 3 --implementers 4 --testers 2
 ```
 
 | オプション | デフォルト | 説明 |
