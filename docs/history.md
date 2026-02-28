@@ -10,3 +10,7 @@
 - バグ修正: planTasks のパース結果で tasks が undefined/非配列のときに TypeError が発生する問題を修正 (バリデーション追加)
 - 機能追加: ディレクティブのワーカーへの伝播 (`.manju/directives.json` 経由で Coordinator のディレクティブをワーカーに伝搬。FileStore に writeDirectives/readDirectives 追加、buildTaskPrompt にディレクティブ引数追加、daemon の executeTask でディレクティブ読み込み)
 - 機能追加: ディレクティブ準拠チェック (Coordinator の handleResult でワーカー出力のディレクティブ準拠を Claude で判定。ComplianceChecker クラス新規作成、ComplianceResult/ComplianceViolation 型追加、COMPLIANCE_CHECK_SCHEMA 追加。非準拠時は警告ログ出力、将来 reviewer ロールに切り出し可能な設計)
+
+## 2026-03-01
+
+- ドキュメント更新: README をソースコードの現状に合わせて更新 (Coordinator コマンド一覧を `/` プレフィックス対応のテーブル形式に刷新、ディレクティブセクション追加、`.manju/` 構造に `directives.json` 追加、アーキテクチャフローにディレクティブ反映・準拠チェックのステップを追加)
