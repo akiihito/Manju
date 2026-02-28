@@ -10,8 +10,6 @@
 
 ## インストール
 
-### グローバルインストール（推奨）
-
 ```bash
 git clone https://github.com/akiihito/Manju.git
 cd Manju
@@ -20,16 +18,15 @@ npm run build
 npm install -g .
 ```
 
-インストール後は任意のプロジェクトで `manju` コマンドが使える。
+`npm install -g .` はビルド済みファイルをシステム共通のグローバル領域にコピーする。インストール後は任意のディレクトリで `manju` コマンドが使える。ソースを変更した場合は再度 `npm run build && npm install -g .` が必要。
 
-### 開発中に使う（npm link）
+Manju 自体を開発しながら使う場合は、代わりに `npm link` を使うと便利。
 
 ```bash
-cd /path/to/Manju
-npm install
-npm run build
-npm link
+npm link    # npm install -g . の代わりに実行
 ```
+
+`npm link` はコピーではなくシンボリックリンクを作るため、ソース変更後は `npm run build` だけで反映される。
 
 ## 使い方
 
