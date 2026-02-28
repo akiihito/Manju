@@ -49,9 +49,26 @@ npx manju status             # 状態確認
 
 ### Coordinator 内コマンド
 
-- リクエストを入力: タスク分解・実行
-- `status`: 現在のタスク状態を表示
-- `quit` / `exit`: 終了
+コマンドは `/` プレフィックス付きで入力する（`status`, `quit`, `exit` はプレフィックスなしでも動作）。
+
+| コマンド | 説明 |
+|---------|------|
+| `/status` | 現在のタスク状態を表示 |
+| `/help` | 利用可能なコマンド一覧を表示 |
+| `/directives` | 設定中のディレクティブ一覧を表示 |
+| `/quit`, `/exit` | セッション終了 |
+| `/<任意のテキスト>` | Coordinator ディレクティブを追加 |
+
+上記以外の入力はタスクリクエストとして処理される。
+
+### ディレクティブ
+
+`/<テキスト>` でディレクティブ（指示）を追加すると、以降のタスク計画・ワーカー実行に反映される。タスク完了時にはディレクティブへの準拠がチェックされ、違反があれば警告が表示される。
+
+```
+manju> /テストは必ず vitest で書くこと
+Directive added: テストは必ず vitest で書くこと
+```
 
 ## チーム構成のカスタマイズ
 
@@ -75,6 +92,7 @@ npx manju start --investigators 3 --implementers 4 --testers 2
 ```
 .manju/
 ├── session.json        # セッションメタデータ
+├── directives.json     # Coordinator ディレクティブ
 ├── tasks/              # タスク定義ファイル
 ├── results/            # タスク結果ファイル
 ├── context/            # 共有コンテキスト
@@ -84,13 +102,14 @@ npx manju start --investigators 3 --implementers 4 --testers 2
 ### フロー
 
 1. ユーザーがCoordinatorにリクエストを入力
-2. Coordinatorが `claude -p` でタスクを分解
+2. Coordinatorが `claude -p` でタスクを分解（ディレクティブがあれば反映）
 3. タスクファイルを `.manju/tasks/` に書き込み
 4. ワーカーがポーリングで自分宛のタスクを検出
-5. ワーカーが `claude -p` でタスクを実行
+5. ワーカーが `.manju/directives.json` を読み込み、`claude -p` でタスクを実行
 6. 結果を `.manju/results/` に書き込み
-7. Coordinatorが結果を検知し、依存タスクを解放
-8. 全タスク完了後、結果を表示
+7. Coordinatorが結果を検知し、ディレクティブ準拠をチェック
+8. 依存タスクを解放
+9. 全タスク完了後、結果を表示
 
 ## 開発
 
