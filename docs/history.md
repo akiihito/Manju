@@ -18,3 +18,4 @@
 - ドキュメント更新: README のインストール説明を改善 (`npm install -g .` と `npm link` の違いを明記、コピー vs シンボリックリンクの説明追加)
 - 機能変更: 手動ディレクティブ入力 (`/<text>`) を廃止し、プロジェクトルートの `CLAUDE.md` を自動読み込みする方式に変更。Coordinator 起動時に CLAUDE.md を読み込み `.manju/directives.json` に書き出し、タスク計画・ワーカー実行・コンプライアンスチェックに自動反映。directives の型を `string[]` → `string` に変更。FileStore に `readClaudeMd()` 追加
 - 機能追加: InputClassifier による入力自動分類。ユーザー入力を Claude で `coordinator`（セッション・チーム構成への質問）か `worker`（開発タスク）に自動分類。Coordinator 宛てなら直接回答、Worker 宛てならタスク分解・ディスパッチ。固定コマンド (`/status`, `/help`, `/quit`, `/exit`, `/directives`) は従来通り優先処理。InputClassification 型・INPUT_CLASSIFICATION_SCHEMA 追加
+- ドキュメント更新: docs/spec.md に InputClassifier 仕様 (分類基準・スキーマ・フォールバック)、固定コマンド一覧、ディレクティブファイル仕様、コンプライアンスチェック仕様を追加
