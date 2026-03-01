@@ -77,19 +77,20 @@ manju status             # 状態確認
 |---------|------|
 | `/status` | 現在のタスク状態を表示 |
 | `/help` | 利用可能なコマンド一覧を表示 |
-| `/directives` | 設定中のディレクティブ一覧を表示 |
+| `/directives` | プロジェクトディレクティブを表示 |
 | `/quit`, `/exit` | セッション終了 |
-| `/<任意のテキスト>` | Coordinator ディレクティブを追加 |
 
 上記以外の入力はタスクリクエストとして処理される。
 
-### ディレクティブ
+### ディレクティブ（CLAUDE.md）
 
-`/<テキスト>` でディレクティブ（指示）を追加すると、以降のタスク計画・ワーカー実行に反映される。タスク完了時にはディレクティブへの準拠がチェックされ、違反があれば警告が表示される。
+対象プロジェクトのルートに `CLAUDE.md` を置くと、Coordinator 起動時に自動で読み込まれる。内容はタスク計画・ワーカー実行に反映され、タスク完了時にはディレクティブへの準拠が自動チェックされる。
 
-```
-manju> /テストは必ず vitest で書くこと
-Directive added: テストは必ず vitest で書くこと
+```markdown
+# 開発ルール
+
+- テストは必ず vitest で書くこと
+- TypeScript の strict モードを使うこと
 ```
 
 ## チーム構成のカスタマイズ
@@ -114,7 +115,7 @@ manju start --investigators 3 --implementers 4 --testers 2
 ```
 .manju/
 ├── session.json        # セッションメタデータ
-├── directives.json     # Coordinator ディレクティブ
+├── directives.json     # プロジェクトディレクティブ（CLAUDE.md から自動生成）
 ├── tasks/              # タスク定義ファイル
 ├── results/            # タスク結果ファイル
 ├── context/            # 共有コンテキスト
@@ -123,15 +124,16 @@ manju start --investigators 3 --implementers 4 --testers 2
 
 ### フロー
 
-1. ユーザーがCoordinatorにリクエストを入力
-2. Coordinatorが `claude -p` でタスクを分解（ディレクティブがあれば反映）
-3. タスクファイルを `.manju/tasks/` に書き込み
-4. ワーカーがポーリングで自分宛のタスクを検出
-5. ワーカーが `.manju/directives.json` を読み込み、`claude -p` でタスクを実行
-6. 結果を `.manju/results/` に書き込み
-7. Coordinatorが結果を検知し、ディレクティブ準拠をチェック
-8. 依存タスクを解放
-9. 全タスク完了後、結果を表示
+1. Coordinator 起動時に `CLAUDE.md` を読み込み、`.manju/directives.json` に書き出し
+2. ユーザーがCoordinatorにリクエストを入力
+3. Coordinatorが `claude -p` でタスクを分解（ディレクティブがあれば反映）
+4. タスクファイルを `.manju/tasks/` に書き込み
+5. ワーカーがポーリングで自分宛のタスクを検出
+6. ワーカーが `.manju/directives.json` を読み込み、`claude -p` でタスクを実行
+7. 結果を `.manju/results/` に書き込み
+8. Coordinatorが結果を検知し、ディレクティブ準拠を自動チェック
+9. 依存タスクを解放
+10. 全タスク完了後、結果を表示
 
 ## 開発
 

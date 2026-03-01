@@ -22,7 +22,7 @@ export class TaskPlanner {
     userRequest: string,
     contextSummary?: string,
     cwd?: string,
-    directives?: string[],
+    directives?: string,
   ): Promise<TaskPlan> {
     const prompt = this.promptBuilder.buildPlanningPrompt(userRequest, contextSummary, directives);
 

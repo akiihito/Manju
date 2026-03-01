@@ -56,8 +56,8 @@ describe("ComplianceChecker", () => {
     mockParseJsonOutput = runner.parseJsonOutput;
   });
 
-  it("should return null when directives is empty", async () => {
-    const result = await checker.check(makeResult(), makeTask(), []);
+  it("should return null when directives is empty string", async () => {
+    const result = await checker.check(makeResult(), makeTask(), "");
     expect(result).toBeNull();
     expect(mockRun).not.toHaveBeenCalled();
   });
@@ -66,7 +66,7 @@ describe("ComplianceChecker", () => {
     const result = await checker.check(
       makeResult({ status: "failure" }),
       makeTask(),
-      ["Use Japanese for all responses"],
+      "Use Japanese for all responses",
     );
     expect(result).toBeNull();
     expect(mockRun).not.toHaveBeenCalled();
@@ -85,7 +85,7 @@ describe("ComplianceChecker", () => {
     const result = await checker.check(
       makeResult(),
       makeTask(),
-      ["Use TypeScript"],
+      "Use TypeScript",
     );
 
     expect(result).toEqual(compliantResult);
@@ -111,7 +111,7 @@ describe("ComplianceChecker", () => {
     const result = await checker.check(
       makeResult(),
       makeTask(),
-      ["日本語で応答して"],
+      "# Rules\n- 日本語で応答して",
     );
 
     expect(result).toEqual(nonCompliantResult);
@@ -126,7 +126,7 @@ describe("ComplianceChecker", () => {
     const result = await checker.check(
       makeResult(),
       makeTask(),
-      ["Use TypeScript"],
+      "Use TypeScript",
     );
 
     expect(result).toBeNull();
@@ -138,7 +138,7 @@ describe("ComplianceChecker", () => {
     const result = await checker.check(
       makeResult(),
       makeTask(),
-      ["Use TypeScript"],
+      "Use TypeScript",
     );
 
     expect(result).toBeNull();
@@ -155,7 +155,7 @@ describe("ComplianceChecker", () => {
     await checker.check(
       makeResult({ output: "Done: implemented feature X" }),
       makeTask({ title: "Feature X", description: "Build feature X" }),
-      ["日本語で応答して", "テストを書くこと"],
+      "# Rules\n- 日本語で応答して\n- テストを書くこと",
     );
 
     expect(mockRun).toHaveBeenCalledTimes(1);

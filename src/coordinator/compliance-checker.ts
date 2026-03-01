@@ -19,9 +19,9 @@ export class ComplianceChecker {
   async check(
     result: TaskResult,
     task: Task,
-    directives: string[],
+    directives: string,
   ): Promise<ComplianceResult | null> {
-    if (directives.length === 0) return null;
+    if (!directives) return null;
     if (result.status !== "success") return null;
 
     try {
@@ -50,12 +50,11 @@ export class ComplianceChecker {
   private buildPrompt(
     result: TaskResult,
     task: Task,
-    directives: string[],
+    directives: string,
   ): string {
-    const directiveList = directives.map((d, i) => `${i + 1}. ${d}`).join("\n");
     return [
-      "## Directives",
-      directiveList,
+      "## Directives (from CLAUDE.md)",
+      directives,
       "",
       "## Task",
       `Title: ${task.title}`,

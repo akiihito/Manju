@@ -8,8 +8,10 @@ const MANJU_DIR = ".manju";
 
 export class FileStore {
   private root: string;
+  private workingDirectory: string;
 
   constructor(workingDirectory: string) {
+    this.workingDirectory = workingDirectory;
     this.root = path.join(workingDirectory, MANJU_DIR);
   }
 
@@ -148,18 +150,31 @@ export class FileStore {
 
   // --- Directives ---
 
-  async writeDirectives(directives: string[]): Promise<void> {
+  async writeDirectives(content: string): Promise<void> {
     const filePath = path.join(this.root, "directives.json");
-    await this.writeJsonAtomic(filePath, { directives });
+    await this.writeJsonAtomic(filePath, { content });
   }
 
-  async readDirectives(): Promise<string[]> {
+  async readDirectives(): Promise<string | null> {
     const filePath = path.join(this.root, "directives.json");
     if (!fs.existsSync(filePath)) {
-      return [];
+      return null;
     }
-    const data = await this.readJson<{ directives: string[] }>(filePath);
-    return data.directives;
+    const data = await this.readJson<{ content: string }>(filePath);
+    return data.content;
+  }
+
+  /** Read CLAUDE.md from the working directory */
+  async readClaudeMd(): Promise<string | null> {
+    const filePath = path.join(this.workingDirectory, "CLAUDE.md");
+    if (!fs.existsSync(filePath)) {
+      return null;
+    }
+    try {
+      return await fs.promises.readFile(filePath, "utf-8");
+    } catch {
+      return null;
+    }
   }
 
   // --- Session ---

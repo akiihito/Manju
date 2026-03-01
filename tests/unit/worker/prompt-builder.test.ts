@@ -70,23 +70,20 @@ describe("PromptBuilder", () => {
     });
 
     it("should include directives section when directives are provided", () => {
-      const prompt = builder.buildTaskPrompt(sampleTask, undefined, [
-        "日本語で応答して",
-        "テストは不要",
-      ]);
-      expect(prompt).toContain("## Coordinator Directives");
-      expect(prompt).toContain("- 日本語で応答して");
-      expect(prompt).toContain("- テストは不要");
+      const prompt = builder.buildTaskPrompt(sampleTask, undefined, "# Rules\n\n- 日本語で応答して\n- テストは不要");
+      expect(prompt).toContain("## Project Directives (CLAUDE.md)");
+      expect(prompt).toContain("日本語で応答して");
+      expect(prompt).toContain("テストは不要");
     });
 
-    it("should not include directives section when directives array is empty", () => {
-      const prompt = builder.buildTaskPrompt(sampleTask, undefined, []);
-      expect(prompt).not.toContain("Coordinator Directives");
+    it("should not include directives section when directives is empty string", () => {
+      const prompt = builder.buildTaskPrompt(sampleTask, undefined, "");
+      expect(prompt).not.toContain("Project Directives");
     });
 
     it("should not include directives section when directives is undefined", () => {
       const prompt = builder.buildTaskPrompt(sampleTask);
-      expect(prompt).not.toContain("Coordinator Directives");
+      expect(prompt).not.toContain("Project Directives");
     });
 
     it("should include both shared context and directives", () => {
@@ -95,10 +92,10 @@ describe("PromptBuilder", () => {
           { from: "investigator-1", task_id: "task-000", summary: "Express app" },
         ],
       };
-      const prompt = builder.buildTaskPrompt(sampleTask, sharedCtx, ["日本語で応答して"]);
+      const prompt = builder.buildTaskPrompt(sampleTask, sharedCtx, "日本語で応答して");
       expect(prompt).toContain("Shared Context");
-      expect(prompt).toContain("## Coordinator Directives");
-      expect(prompt).toContain("- 日本語で応答して");
+      expect(prompt).toContain("## Project Directives (CLAUDE.md)");
+      expect(prompt).toContain("日本語で応答して");
     });
   });
 
@@ -121,33 +118,30 @@ describe("PromptBuilder", () => {
     });
 
     it("should include directives section when directives are provided", () => {
-      const prompt = builder.buildPlanningPrompt("Add login feature", undefined, [
-        "日本語で応答して",
-        "テストは不要",
-      ]);
-      expect(prompt).toContain("## Coordinator Directives");
+      const prompt = builder.buildPlanningPrompt("Add login feature", undefined, "# Rules\n- 日本語で応答して\n- テストは不要");
+      expect(prompt).toContain("## Project Directives (CLAUDE.md)");
       expect(prompt).toContain("日本語で応答して");
       expect(prompt).toContain("テストは不要");
     });
 
-    it("should not include directives section when directives array is empty", () => {
-      const prompt = builder.buildPlanningPrompt("Add login feature", undefined, []);
-      expect(prompt).not.toContain("Coordinator Directives");
+    it("should not include directives section when directives is empty string", () => {
+      const prompt = builder.buildPlanningPrompt("Add login feature", undefined, "");
+      expect(prompt).not.toContain("Project Directives");
     });
 
     it("should not include directives section when directives is undefined", () => {
       const prompt = builder.buildPlanningPrompt("Add login feature");
-      expect(prompt).not.toContain("Coordinator Directives");
+      expect(prompt).not.toContain("Project Directives");
     });
 
     it("should include both context and directives when both provided", () => {
       const prompt = builder.buildPlanningPrompt(
         "Add login feature",
         "Express app with JWT",
-        ["日本語で応答して"],
+        "日本語で応答して",
       );
       expect(prompt).toContain("Express app with JWT");
-      expect(prompt).toContain("## Coordinator Directives");
+      expect(prompt).toContain("## Project Directives (CLAUDE.md)");
       expect(prompt).toContain("日本語で応答して");
     });
   });

@@ -156,7 +156,7 @@ describe("Coordinator command routing", () => {
     exitMock.mockRestore();
   });
 
-  it("/ + free text should add a directive and write to store", async () => {
+  it("/directives should show CLAUDE.md content when loaded", async () => {
     const { Coordinator } = await import("../../../src/coordinator/index.js");
     const exitMock = vi.spyOn(process, "exit").mockImplementation((() => {}) as never);
 
@@ -166,34 +166,9 @@ describe("Coordinator command routing", () => {
       testers: 1,
     });
 
-    // Mock store.writeDirectives to avoid filesystem errors
-    const writeDirectivesSpy = vi.fn().mockResolvedValue(undefined);
+    // Set directives as if loaded from CLAUDE.md
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (coord as any).store.writeDirectives = writeDirectivesSpy;
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await (coord as any).routeInput("/ここからは日本語で");
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    expect((coord as any).directives).toContain("ここからは日本語で");
-    expect(writeDirectivesSpy).toHaveBeenCalledWith(["ここからは日本語で"]);
-
-    exitMock.mockRestore();
-  });
-
-  it("/directives should list current directives", async () => {
-    const { Coordinator } = await import("../../../src/coordinator/index.js");
-    const exitMock = vi.spyOn(process, "exit").mockImplementation((() => {}) as never);
-
-    const coord = new Coordinator("/tmp/test", {
-      investigators: 1,
-      implementers: 1,
-      testers: 1,
-    });
-
-    // Add some directives first
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (coord as any).directives = ["日本語で応答して", "テストは不要"];
+    (coord as any).directives = "# Rules\n- 日本語で応答して\n- テストは不要";
 
     const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {});
 
@@ -205,6 +180,50 @@ describe("Coordinator command routing", () => {
     expect(output).toContain("テストは不要");
 
     consoleSpy.mockRestore();
+    exitMock.mockRestore();
+  });
+
+  it("/directives should show 'no directives' when CLAUDE.md not found", async () => {
+    const { Coordinator } = await import("../../../src/coordinator/index.js");
+    const exitMock = vi.spyOn(process, "exit").mockImplementation((() => {}) as never);
+
+    const coord = new Coordinator("/tmp/test", {
+      investigators: 1,
+      implementers: 1,
+      testers: 1,
+    });
+
+    const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (coord as any).routeInput("/directives");
+
+    const output = consoleSpy.mock.calls.map((c) => c.join(" ")).join("\n");
+    expect(output).toContain("No directives");
+
+    consoleSpy.mockRestore();
+    exitMock.mockRestore();
+  });
+
+  it("unknown /command should be treated as task request", async () => {
+    const { Coordinator } = await import("../../../src/coordinator/index.js");
+    const exitMock = vi.spyOn(process, "exit").mockImplementation((() => {}) as never);
+
+    const coord = new Coordinator("/tmp/test", {
+      investigators: 1,
+      implementers: 1,
+      testers: 1,
+    });
+
+    const handleRequestSpy = vi.fn();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (coord as any).handleRequest = handleRequestSpy;
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (coord as any).routeInput("/ここからは日本語で");
+
+    expect(handleRequestSpy).toHaveBeenCalledWith("/ここからは日本語で");
+
     exitMock.mockRestore();
   });
 
@@ -299,9 +318,9 @@ describe("Coordinator command routing", () => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (coord as any).currentTasks = [task];
 
-    // Add directives
+    // Set directives (as if loaded from CLAUDE.md)
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (coord as any).directives = ["日本語で応答して"];
+    (coord as any).directives = "日本語で応答して";
 
     // Mock store.readResult
     const mockResult = {
@@ -332,7 +351,7 @@ describe("Coordinator command routing", () => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await (coord as any).handleResult("task-123.json");
 
-    expect(checkSpy).toHaveBeenCalledWith(mockResult, task, ["日本語で応答して"]);
+    expect(checkSpy).toHaveBeenCalledWith(mockResult, task, "日本語で応答して");
 
     exitMock.mockRestore();
   });
@@ -360,8 +379,6 @@ describe("Coordinator command routing", () => {
     };
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (coord as any).currentTasks = [task];
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (coord as any).directives = [];
 
     const mockResult = {
       task_id: "task-456",
@@ -419,7 +436,7 @@ describe("Coordinator command routing", () => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (coord as any).currentTasks = [task];
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (coord as any).directives = ["日本語で応答して"];
+    (coord as any).directives = "日本語で応答して";
 
     const mockResult = {
       task_id: "task-789",
@@ -460,26 +477,6 @@ describe("Coordinator command routing", () => {
     expect(output).toContain("日本語で応答して");
 
     consoleSpy.mockRestore();
-    exitMock.mockRestore();
-  });
-
-  it("directives should be passed to handleRequest context", async () => {
-    const { Coordinator } = await import("../../../src/coordinator/index.js");
-    const exitMock = vi.spyOn(process, "exit").mockImplementation((() => {}) as never);
-
-    const coord = new Coordinator("/tmp/test", {
-      investigators: 1,
-      implementers: 1,
-      testers: 1,
-    });
-
-    // Add a directive
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (coord as any).directives = ["日本語で応答して"];
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    expect((coord as any).directives).toEqual(["日本語で応答して"]);
-
     exitMock.mockRestore();
   });
 });

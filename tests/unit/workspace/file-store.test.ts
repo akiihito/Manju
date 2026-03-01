@@ -130,23 +130,37 @@ describe("FileStore", () => {
   });
 
   describe("directives", () => {
-    it("should write and read directives", async () => {
-      const directives = ["日本語で応答して", "テストは不要"];
-      await store.writeDirectives(directives);
+    it("should write and read directives as string content", async () => {
+      const content = "# Dev Rules\n\n- Use TypeScript\n- Write tests first";
+      await store.writeDirectives(content);
       const read = await store.readDirectives();
-      expect(read).toEqual(directives);
+      expect(read).toBe(content);
     });
 
-    it("should return empty array when no directives file exists", async () => {
+    it("should return null when no directives file exists", async () => {
       const read = await store.readDirectives();
-      expect(read).toEqual([]);
+      expect(read).toBeNull();
     });
 
     it("should overwrite previous directives", async () => {
-      await store.writeDirectives(["first"]);
-      await store.writeDirectives(["second", "third"]);
+      await store.writeDirectives("first");
+      await store.writeDirectives("second content");
       const read = await store.readDirectives();
-      expect(read).toEqual(["second", "third"]);
+      expect(read).toBe("second content");
+    });
+  });
+
+  describe("readClaudeMd", () => {
+    it("should read CLAUDE.md from the working directory", async () => {
+      const claudeMdPath = path.join(tmpDir, "CLAUDE.md");
+      await fs.promises.writeFile(claudeMdPath, "# Rules\n\n- Be concise", "utf-8");
+      const content = await store.readClaudeMd();
+      expect(content).toBe("# Rules\n\n- Be concise");
+    });
+
+    it("should return null when CLAUDE.md does not exist", async () => {
+      const content = await store.readClaudeMd();
+      expect(content).toBeNull();
     });
   });
 

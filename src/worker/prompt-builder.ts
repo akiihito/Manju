@@ -36,7 +36,7 @@ export class PromptBuilder {
   }
 
   /** Build the task execution prompt including context */
-  buildTaskPrompt(task: Task, sharedContext?: SharedContext, directives?: string[]): string {
+  buildTaskPrompt(task: Task, sharedContext?: SharedContext, directives?: string): string {
     let prompt = `# Task: ${task.title}\n\n`;
     prompt += `${task.description}\n`;
 
@@ -51,18 +51,15 @@ export class PromptBuilder {
       }
     }
 
-    if (directives && directives.length > 0) {
-      prompt += `\n## Coordinator Directives\n`;
-      for (const d of directives) {
-        prompt += `- ${d}\n`;
-      }
+    if (directives) {
+      prompt += `\n## Project Directives (CLAUDE.md)\n${directives}\n`;
     }
 
     return prompt;
   }
 
   /** Build the coordinator's task planning prompt */
-  buildPlanningPrompt(userRequest: string, contextSummary?: string, directives?: string[]): string {
+  buildPlanningPrompt(userRequest: string, contextSummary?: string, directives?: string): string {
     let prompt = `# User Request\n\n${userRequest}\n\n`;
     prompt += `Break this request into concrete tasks for a development team.\n`;
     prompt += `Available roles:\n`;
@@ -76,11 +73,8 @@ export class PromptBuilder {
       prompt += `\n## Current Project Context\n${contextSummary}\n`;
     }
 
-    if (directives && directives.length > 0) {
-      prompt += `\n## Coordinator Directives\n`;
-      for (const d of directives) {
-        prompt += `- ${d}\n`;
-      }
+    if (directives) {
+      prompt += `\n## Project Directives (CLAUDE.md)\n${directives}\n`;
     }
 
     return prompt;

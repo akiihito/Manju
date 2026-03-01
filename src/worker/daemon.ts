@@ -86,7 +86,7 @@ export class WorkerDaemon {
       // Build prompt
       const sharedContext = await this.store.readContext();
       const directives = await this.store.readDirectives();
-      const prompt = this.promptBuilder.buildTaskPrompt(task, sharedContext, directives);
+      const prompt = this.promptBuilder.buildTaskPrompt(task, sharedContext, directives ?? undefined);
       const systemPrompt = this.promptBuilder.getSystemPrompt(this.role);
 
       // Run claude

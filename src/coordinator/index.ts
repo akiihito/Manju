@@ -14,7 +14,7 @@ const FIXED_COMMANDS: Record<string, string> = {
   quit: "Shut down the session",
   exit: "Shut down the session",
   help: "Show available commands",
-  directives: "List current directives",
+  directives: "Show project directives (from CLAUDE.md)",
 };
 
 export class Coordinator {
@@ -28,7 +28,7 @@ export class Coordinator {
   private team: TeamConfig;
   private cwd: string;
   private currentTasks: Task[] = [];
-  private directives: string[] = [];
+  private directives: string = "";
   private onShutdown?: () => void;
 
   constructor(cwd: string, team: TeamConfig, onShutdown?: () => void) {
@@ -48,6 +48,14 @@ export class Coordinator {
   async start(): Promise<void> {
     await this.store.init();
 
+    // Load directives from CLAUDE.md
+    const claudeMd = await this.store.readClaudeMd();
+    if (claudeMd) {
+      this.directives = claudeMd;
+      await this.store.writeDirectives(claudeMd);
+      this.logger.info("Loaded directives from CLAUDE.md");
+    }
+
     // Watch for results
     this.watcher.watchDirectory(this.store.resultsDir, async (filename) => {
       await this.handleResult(filename);
@@ -55,6 +63,9 @@ export class Coordinator {
 
     this.logger.info("Coordinator started. Waiting for input...");
     console.log("\n🎯 Manju Coordinator");
+    if (this.directives) {
+      console.log("📋 Directives loaded from CLAUDE.md");
+    }
     console.log("Type your request and press Enter.\n");
 
     const rl = readline.createInterface({
@@ -92,15 +103,14 @@ export class Coordinator {
 
   /**
    * Route user input to the appropriate handler.
-   * - "/" prefix → coordinator command or directive
+   * - "/" prefix → coordinator command
    * - "status" / "quit" / "exit" (no prefix) → legacy backward compat
    * - everything else → task decomposition
    */
   private async routeInput(input: string): Promise<"shutdown" | void> {
     // Slash-prefixed commands
     if (input.startsWith("/")) {
-      const body = input.slice(1);
-      const cmd = body.toLowerCase();
+      const cmd = input.slice(1).toLowerCase();
 
       if (cmd === "status") {
         this.printStatus();
@@ -118,13 +128,6 @@ export class Coordinator {
         this.printDirectives();
         return;
       }
-
-      // Free-form directive
-      this.directives.push(body);
-      await this.store.writeDirectives(this.directives);
-      console.log(`Directive added: ${body}`);
-      this.logger.info(`Directive added: ${body}`);
-      return;
     }
 
     // Legacy commands (backward compat, no slash)
@@ -151,7 +154,7 @@ export class Coordinator {
       request,
       contextSummary || undefined,
       this.cwd,
-      this.directives.length > 0 ? this.directives : undefined,
+      this.directives || undefined,
     );
 
     console.log(`\nPlan: ${plan.summary}`);
@@ -186,7 +189,7 @@ export class Coordinator {
       await this.contextManager.addFromResult(result, task.assignee);
 
       // Compliance check
-      if (result.status === "success" && this.directives.length > 0) {
+      if (result.status === "success" && this.directives) {
         const compliance = await this.complianceChecker.check(result, task, this.directives);
         if (compliance && !compliance.compliant) {
           this.logger.warn(`Task ${taskId} compliance violations: ${compliance.summary}`);
@@ -255,22 +258,19 @@ export class Coordinator {
     console.log("  /quit        Shut down the session");
     console.log("  /exit        Shut down the session");
     console.log("  /help        Show this help");
-    console.log("  /directives  List current directives");
-    console.log("  /<text>      Add a coordinator directive");
+    console.log("  /directives  Show project directives (from CLAUDE.md)");
     console.log("");
     console.log("Any other input is treated as a task request.\n");
   }
 
   /** Print current directives */
   private printDirectives(): void {
-    if (this.directives.length === 0) {
-      console.log("No directives set.");
+    if (!this.directives) {
+      console.log("No directives found. Place a CLAUDE.md in the project root to set directives.");
       return;
     }
-    console.log("\n--- Coordinator Directives ---");
-    for (const d of this.directives) {
-      console.log(`  - ${d}`);
-    }
+    console.log("\n--- Project Directives (CLAUDE.md) ---");
+    console.log(this.directives);
     console.log("");
   }
 
