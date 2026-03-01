@@ -16,3 +16,4 @@
 - ドキュメント更新: README をソースコードの現状に合わせて更新 (Coordinator コマンド一覧を `/` プレフィックス対応のテーブル形式に刷新、ディレクティブセクション追加、`.manju/` 構造に `directives.json` 追加、アーキテクチャフローにディレクティブ反映・準拠チェックのステップを追加)
 - ドキュメント更新: README にグローバルインストール・npm link の手順を追加、任意プロジェクトでの使い方 (`manju start`, `--cwd`) を記載、`npx manju` → `manju` に統一
 - ドキュメント更新: README のインストール説明を改善 (`npm install -g .` と `npm link` の違いを明記、コピー vs シンボリックリンクの説明追加)
+- 機能変更: 手動ディレクティブ入力 (`/<text>`) を廃止し、プロジェクトルートの `CLAUDE.md` を自動読み込みする方式に変更。Coordinator 起動時に CLAUDE.md を読み込み `.manju/directives.json` に書き出し、タスク計画・ワーカー実行・コンプライアンスチェックに自動反映。directives の型を `string[]` → `string` に変更。FileStore に `readClaudeMd()` 追加
