@@ -107,6 +107,12 @@ export interface Layout {
   rows: PaneInfo[][];
 }
 
+/** Result of input classification */
+export interface InputClassification {
+  target: "coordinator" | "worker";
+  response: string;
+}
+
 /** Result of a directive compliance check */
 export interface ComplianceResult {
   compliant: boolean;

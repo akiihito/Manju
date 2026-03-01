@@ -205,7 +205,7 @@ describe("Coordinator command routing", () => {
     exitMock.mockRestore();
   });
 
-  it("unknown /command should be treated as task request", async () => {
+  it("unknown /command should be classified and routed", async () => {
     const { Coordinator } = await import("../../../src/coordinator/index.js");
     const exitMock = vi.spyOn(process, "exit").mockImplementation((() => {}) as never);
 
@@ -218,16 +218,26 @@ describe("Coordinator command routing", () => {
     const handleRequestSpy = vi.fn();
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (coord as any).handleRequest = handleRequestSpy;
+
+    // Mock classifier to return worker
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (coord as any).inputClassifier.classify = vi.fn().mockResolvedValue({
+      target: "worker",
+      response: "",
+    });
+
+    const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {});
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await (coord as any).routeInput("/ここからは日本語で");
 
     expect(handleRequestSpy).toHaveBeenCalledWith("/ここからは日本語で");
 
+    consoleSpy.mockRestore();
     exitMock.mockRestore();
   });
 
-  it("input without / prefix should call handleRequest", async () => {
+  it("should call handleRequest when classifier returns 'worker'", async () => {
     const { Coordinator } = await import("../../../src/coordinator/index.js");
     const exitMock = vi.spyOn(process, "exit").mockImplementation((() => {}) as never);
 
@@ -241,11 +251,58 @@ describe("Coordinator command routing", () => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (coord as any).handleRequest = handleRequestSpy;
 
+    // Mock classifier to return worker
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (coord as any).inputClassifier.classify = vi.fn().mockResolvedValue({
+      target: "worker",
+      response: "",
+    });
+
+    const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await (coord as any).routeInput("Add login feature");
 
     expect(handleRequestSpy).toHaveBeenCalledWith("Add login feature");
 
+    consoleSpy.mockRestore();
+    exitMock.mockRestore();
+  });
+
+  it("should print response when classifier returns 'coordinator'", async () => {
+    const { Coordinator } = await import("../../../src/coordinator/index.js");
+    const exitMock = vi.spyOn(process, "exit").mockImplementation((() => {}) as never);
+
+    const coord = new Coordinator("/tmp/test", {
+      investigators: 1,
+      implementers: 1,
+      testers: 1,
+    });
+
+    const handleRequestSpy = vi.fn();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (coord as any).handleRequest = handleRequestSpy;
+
+    // Mock classifier to return coordinator
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (coord as any).inputClassifier.classify = vi.fn().mockResolvedValue({
+      target: "coordinator",
+      response: "チーム構成は investigator: 1, implementer: 1, tester: 1 です。",
+    });
+
+    const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (coord as any).routeInput("チーム構成を教えて");
+
+    // Should NOT call handleRequest
+    expect(handleRequestSpy).not.toHaveBeenCalled();
+
+    // Should print the response
+    const output = consoleSpy.mock.calls.map((c) => c.join(" ")).join("\n");
+    expect(output).toContain("チーム構成");
+
+    consoleSpy.mockRestore();
     exitMock.mockRestore();
   });
 

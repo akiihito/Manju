@@ -5,6 +5,7 @@ import { TaskPlanner } from "./task-planner.js";
 import { TaskScheduler } from "./task-scheduler.js";
 import { ContextManager } from "./context-manager.js";
 import { ComplianceChecker } from "./compliance-checker.js";
+import { InputClassifier } from "./input-classifier.js";
 import { Logger } from "../utils/logger.js";
 import type { Task, TeamConfig } from "../types.js";
 
@@ -24,6 +25,7 @@ export class Coordinator {
   private scheduler: TaskScheduler;
   private contextManager: ContextManager;
   private complianceChecker: ComplianceChecker;
+  private inputClassifier: InputClassifier;
   private logger: Logger;
   private team: TeamConfig;
   private cwd: string;
@@ -41,6 +43,7 @@ export class Coordinator {
     this.scheduler = new TaskScheduler(this.store);
     this.contextManager = new ContextManager(this.store);
     this.complianceChecker = new ComplianceChecker();
+    this.inputClassifier = new InputClassifier();
     this.logger = new Logger("coordinator");
   }
 
@@ -103,12 +106,12 @@ export class Coordinator {
 
   /**
    * Route user input to the appropriate handler.
-   * - "/" prefix → coordinator command
-   * - "status" / "quit" / "exit" (no prefix) → legacy backward compat
-   * - everything else → task decomposition
+   * 1. Fixed commands (/status, /help, /quit, /exit, /directives) → direct handling
+   * 2. Legacy commands (status, quit, exit without /) → backward compat
+   * 3. Free-form input → classify with Claude, then route to coordinator response or task decomposition
    */
   private async routeInput(input: string): Promise<"shutdown" | void> {
-    // Slash-prefixed commands
+    // Slash-prefixed fixed commands
     if (input.startsWith("/")) {
       const cmd = input.slice(1).toLowerCase();
 
@@ -138,6 +141,22 @@ export class Coordinator {
     if (input === "quit" || input === "exit") {
       this.shutdown();
       return "shutdown";
+    }
+
+    // Classify input with Claude
+    console.log("\nClassifying input...\n");
+    const classification = await this.inputClassifier.classify(input, {
+      teamConfig: this.team,
+      taskSummary: this.currentTasks.length > 0
+        ? JSON.stringify(this.scheduler.getStatusSummary(this.currentTasks))
+        : undefined,
+      directives: this.directives || undefined,
+    });
+
+    if (classification.target === "coordinator") {
+      console.log(classification.response);
+      console.log("");
+      return;
     }
 
     // Task request

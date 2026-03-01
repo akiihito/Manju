@@ -68,6 +68,25 @@ export const TASK_RESULT_SCHEMA = {
   required: ["output", "artifacts", "context_contribution"],
 };
 
+/** JSON Schema for input classification result */
+export const INPUT_CLASSIFICATION_SCHEMA = {
+  type: "object" as const,
+  properties: {
+    target: {
+      type: "string" as const,
+      enum: ["coordinator", "worker"],
+      description:
+        "Where to route this input: 'coordinator' if the input is a question or command directed at the orchestration system itself, 'worker' if it is a development task that should be decomposed and dispatched to workers",
+    },
+    response: {
+      type: "string" as const,
+      description:
+        "When target is 'coordinator', provide a helpful response to the user. When target is 'worker', leave empty.",
+    },
+  },
+  required: ["target", "response"],
+};
+
 /** JSON Schema for compliance check result */
 export const COMPLIANCE_CHECK_SCHEMA = {
   type: "object" as const,
